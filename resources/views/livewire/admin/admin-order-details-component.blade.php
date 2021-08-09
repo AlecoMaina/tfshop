@@ -168,16 +168,16 @@
                        <table class="table">
                         <tr>
                             <th>Transaction Mode</th>
-                            <td>{{$order->transaction->mode}}</td>
+                            <td>{{$order->transaction['mode']}}</td>
                         </tr>
                           
                            <tr>
                             <th>Status</th>
-                            <td>{{$order->transaction->status}}</td>
+                            <td>{{$order->transaction['status']}}</td>
                         </tr>
                         <tr>
                             <th>Transaction Date</th>
-                            <td>{{$order->transaction->created_at}}</td>
+                            <td>{{$order->transaction['created_at']}}</td>
                         </tr>
                        </table>
                     </div>

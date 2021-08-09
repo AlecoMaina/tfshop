@@ -152,34 +152,7 @@
 				<div class="summary summary-checkout">
 					<div class="summary-item payment-method">						
 						<h4 class="title-box">Payment Method</h4>
-						@if($paymentmode == 'card')
-						<div class="wrap-address-billing">
-							@if (Session::has('stripe_error'))
-							<div class="alert alert-danger " role ="alert">{{Session::get('stripe_error')}}</div>
-								
-							@endif
-							<p class="row-in-form">
-								<label for="card number">Card Number<span>*</span></label>
-								<input  type="text" name="card-no" value="" placeholder="Card Number " wire:model="card_no">
-								@error('card_no') <span class="text-danger">{{$message}}</span> @enderror
-							</p>
-							<p class="row-in-form">
-								<label for="exp-month">Expiry Month<span>*</span></label>
-								<input  type="text" name="exp-month" value="" placeholder="MM " wire:model="exp_month">
-								@error('exp_month') <span class="text-danger">{{$message}}</span> @enderror
-							</p>
-							<p class="row-in-form">
-								<label for="exp-year">Expiry Year:<span>*</span></label>
-								<input  type="text" name="exp-year" value="" placeholder="YYY " wire:model="exp_year">
-								@error('exp_year') <span class="text-danger">{{$message}}</span> @enderror
-							</p>
-							<p class="row-in-form">
-								<label for="cvc">CVC<span>*</span></label>
-								<input  type="password" name="cvc" value="" placeholder="CVC " wire:model="cvc">
-								@error('cvc') <span class="text-danger">{{$message}}</span> @enderror
-							</p>
-						</div>
-						@endif
+
 						<div class="choose-payment-methods">
 							<label class="payment-method">
 								<input name="payment-method" id="payment-method-bank" value="cod" type="radio" wire:model="paymentmode">
@@ -188,12 +161,12 @@
 							</label>
 							<label class="payment-method">
 								<input name="payment-method" id="payment-method-visa" value="card" type="radio" wire:model="paymentmode">
-								<span>Debit/ Credit/Mpesa Payment</span>
-								<span class="payment-desc">There are many variations of passages of Lorem Ipsum available</span>
+								<span>Credit/Debit Card</span>
+								<span class="payment-desc">You will be redirected once you click to complete payment</span>
 							</label>
 							<label class="payment-method">
-								<input name="payment-method" id="payment-method-paypal" value="paypal" type="radio" wire:model="paymentmode">
-								<span>Paypal</span>
+								<input name="payment-method" id="payment-method-paypal" value="mobile" type="radio" wire:model="paymentmode">
+								<span>Mpesa/Airtel/Equitel</span>
 								<span class="payment-desc">You can pay with your credit</span>
 								<span class="payment-desc">card if you don't have a paypal account</span>
 							</label>
@@ -202,7 +175,11 @@
 						@if(Session::has('checkout'))
 						<p class="summary-info grand-total"><span>Grand Total</span> <span class="grand-total-price">KSH{{Session::get('checkout')['total']}}</span></p>
 						@endif
+
+						@if($submitFormButton)
 						<button type="submit" class="btn btn-medium">Place order now</button>
+						@endif
+
 					</div>
 					<div class="summary-item shipping-method">
 						<h4 class="title-box f-title">Shipping method</h4>
@@ -213,6 +190,28 @@
 				</div>
 			</form>
 				
+
+			@if($showForm)
+				<form action="https://payments.ipayafrica.com/v3/ke" method="post">
+					<input name="live" type="hidden" value="0">
+					<input name="oid" type="hidden" value="{{ $formArray['oid'] }}">
+					<input name="inv" type="hidden" value="{{ $formArray['inv'] }}">
+					<input name="ttl" type="hidden" value="{{ $formArray['ttl'] }}">
+					<input name="tel" type="hidden" value="{{ $formArray['tel'] }}">
+					<input name="eml" type="hidden" value="{{ $formArray['eml'] }}">
+					<input name="vid" type="hidden" value="demo">
+					<input name="curr" type="hidden" value="KES">
+					<input name="p1" type="hidden" value="paymentforgoods">
+					<input name="p2" type="hidden" value="{{ $formArray['p2'] }}">
+					<input name="cbk" type="hidden" value="{{ $formArray['cbk'] }}">
+					<input name="cst" type="hidden" value="1">
+					<input name="crl" type="hidden" value="0">
+					<input name="hsh" type="hidden" value="{{ $formHash }}">
+					<input value="Complete Payment" type="submit" class="btn btn-success btn-medium">
+				</form>
+			@else
+
+			@endif
 
 			</div><!--end main content area-->
 		</div><!--end container-->

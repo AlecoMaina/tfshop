@@ -4,9 +4,9 @@ namespace App\Http\Livewire;
 use App\Models\HomeSlider;
 use App\Models\Product;
 use Livewire\Component;
-use\App\Models\Category;
-use\App\Models\HomeCategory;
-use\App\Models\Sale;
+use App\Models\Category;
+use App\Models\HomeCategory;
+use App\Models\Sale;
 class HomeComponent extends Component
 {
     public function render()

@@ -13,7 +13,7 @@ class Order extends Model
 
     public function user()
     {
-        return $this ->belongsdTo(User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function orderItems()

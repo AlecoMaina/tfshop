@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 use Cart;
 use Stripe;
 use Livewire\Component;
+use App\Services\PaymentService;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Crypt;
 
 class CheckoutComponent extends Component
 {
@@ -44,6 +47,16 @@ class CheckoutComponent extends Component
     public $exp_month;
     public $exp_year;
     public $cvc;
+
+    // payment variables
+    public $paybill = array();
+    public $totalAmount;
+    public $formHash;
+    public $showForm = false;
+    public $submitFormButton = true;
+    public $formArray = array();
+    public $orderId;
+
 
     public function updated($fields)
     {
@@ -100,20 +113,12 @@ class CheckoutComponent extends Component
             'country' =>'required',
             'zipcode' =>'required',
             'paymentmode'=>'required'
-        ]);
-        if($this->paymentmode == 'card') 
-            {
-                $this->validate([
-                    'card_no'=> 'required|numeric',
-                    'exp_month'=> 'required|numeric',
-                    'exp_year'=> 'required|numeric',
-                    'cvc'=> 'required|numeric'
-
-                ]);
-            }   
+        ]);  
 
         $order = new Order();
         $order-> user_id = Auth::user()->id;
+        $order-> ordernumber = strtoupper(uniqid('ORD-'));
+        $order-> invoicenumber = strtoupper(uniqid('INV-'));
         $order-> subtotal = Session()->get('checkout')['subtotal'];
         $order-> discount = Session()->get('checkout')['discount'];
         $order-> tax = Session()->get('checkout')['tax'];
@@ -131,6 +136,10 @@ class CheckoutComponent extends Component
         $order -> status = 'ordered';
         $order -> is_shipping_different = $this->ship_to_different ? 1:0; 
         $order -> save();
+
+        //make the payment request
+        //dd($order);
+        //$this->executePayment($order);
 
 
         foreach(Cart:: instance ('cart')->content()as $item)
@@ -173,75 +182,99 @@ class CheckoutComponent extends Component
              $shipping->save();
         }
 
+        
+        
         if($this->paymentmode == 'cod')
         {
            $this->makeTransaction($order->id,'pending');
            $this->restCart();
         }
-        else if($this->paymentmode == 'card')
+        else if($this->paymentmode == 'mobile')
         {
-          $stripe = Stripe::make(env('STRIPE_KEY'));
+        //$stripe = Stripe::make(env('STRIPE_KEY'));
 
-          try{
-              $token = $stripe->tokens()->create([
-                  'card'=>[
-                      'number'=> $this->card_no,
-                      'exp_month' => $this->exp_month,
-                      'exp_year'=>$this->exp_year,
-                      'cvc'=>$this->cvc
-                    ]
-                ]);
-             If(!isset($token['id']))
-             {
-                 session()->flash('stripe_error', 'The stripe token was not generated correctly!');
-                 $this->thankyou =0;
-             }   
-             $customer = $stripe->customers()->create([
-                 'name' => $this->firstname .' '.$this->lastname,
-                 'email'=>$this->email,
-                 'phone'=>$this->mobile,
-                 'address'=>[
-                     'line1' =>$this->line1,
-                     'postal_code' =>$this->zipcode,
-                     'city' =>$this->city,
-                     'state'=>$this->province,
-                     'country'=>$this->country
-                 ],
-                 'shipping'=>[
-                    'name' => $this->firstname .' '.$this->lastname,
-                    'phone'=>$this->mobile,
-                    'address'=>[
-                        'line1' =>$this->line1,
-                        'postal_code' =>$this->zipcode,
-                        'city' =>$this->city,
-                        'state'=>$this->province,
-                        'country'=>$this->country
-                    ],
-                ],
-                'source'=>$token['id']
-                ]);
-                $charge = $stripe->charges()->create([
-                    'customer' =>$customer['id'],
-                    'currency' =>'USD',
-                    'amount' =>session()->get('checkout')['total'],
-                    'description' => 'payment for order no ' .$order->id
-                ]);
-                if($charge['status'] =='succeeded')
-                {
-                    $this->makeTransaction($order->id,'approved');
-                    $this->restCart();
-                }
-                else{
-                    session()->flash('stripe_error', 'Error in Transaction!');
-                    $this->thankyou = 0;
-                }
-          }catch(exception $e){
-              session()->flash('stripe_error',$e->getMessage());
-              $this->thankyou = 0;
+          $paymentStatus = $this->executePayment($order);
+
+          if($paymentStatus){
+
+            //dd($paymentStatus->data->payment_channels[1]->paybill);
+            $paybillArray = array(
+                'mpesa' => $paymentStatus->data->payment_channels[0]->paybill,
+                'airtel' => $paymentStatus->data->payment_channels[1]->paybill,
+                'equitel' => $paymentStatus->data->payment_channels[2]->paybill,
+            );
+
+            $this->paybill = $paybillArray;
+            $this->totalAmount = $order->total;
+            $this->orderId = $order->id;
+            $this->restCart();
           }
 
+
+        }
+         else if($this->paymentmode == 'card')
+        {
+            //enables the second form to submit to ipay for redirection and verify
+
+        $fields = array(
+                "live"=> "0",
+                "oid"=> $order->ordernumber,
+                "inv"=> $order->invoicenumber,
+                "ttl"=> $order->total,
+                "tel"=> $order->mobile,
+                "eml"=> $order->user->email,
+                "vid"=> env('IPAY_VENDOR_ID', 'demo'),
+                "curr"=> "KES",
+                "p1"=> "paymentforgoods",
+                "p2"=>  $order->id,
+                "cbk"=> route('thankyou'),
+                "cst"=> "1",
+                "crl"=> "0",
+                );
+
+        $datastring =  $fields['live'].$fields['oid'].$fields['inv'].$fields['ttl'].$fields['tel'].$fields['eml'].$fields['vid'].$fields['curr'].$fields['p1'].$fields['p2'].$fields['cbk'].$fields['cst'].$fields['crl'];
+        $hashkey ="demoCHANGED";
+
+        $generated_hash = hash_hmac('sha1',$datastring , $hashkey);
+                
+        $this->formHash = $generated_hash;
+        $this->showForm = true;
+        $this->submitFormButton = false;
+        $this->formArray = $fields;
+
+        //dd($this->formArray);
         }
               
+    }
+
+    //methode to call the payment service
+    public function executePayment($request)
+    {
+
+        $data = $request;
+
+        $result = ['status' => 200];
+
+        try {
+
+            $result =  new PaymentService;
+            $response = $result->initiatePayment($data);
+
+        } catch (Exception $e) {
+
+            $result = [
+                'status' => 500,
+                'error' => $e->getMessage()
+            ];
+
+        }
+
+        return $response;
+    }
+
+    public function createCreditCartDeatils($data)
+    {
+
     }
 
     public function restCart()
@@ -271,7 +304,12 @@ class CheckoutComponent extends Component
         }
         else if($this->thankyou)
         {
-            return redirect()->route('thankyou');
+            $paybilNumber = $this->paybill;
+            $totalCostAmount = $this->totalAmount;
+            $order_id = $this->orderId;
+            //dd($paybilNumber);
+            //encrypt the order id
+            return redirect()->route('thankyou', ['paybilNumber' => $this->paybill, 'amount' => Crypt::encryptString($totalCostAmount), 'transactionType' => 'mobilemoney', 'orderId' =>  Crypt::encryptString($order_id)]);
         }
         elseif (!session()->get('checkout'))
         {
