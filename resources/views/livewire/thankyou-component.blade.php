@@ -11,16 +11,38 @@
 				</ul>
 			</div>
 		</div>
+
+		@if(Session::has('warning_message'))
+		<div class="alert alert-warning">
+			<strong>{{Session::get('warning_message')}}</strong>
+		</div>
+		@endif
+
+		@if($paymentContainer)
+		<div class="container pb-60">
+			<div class="row">
+				<div class="col-md-12 text-center">
+					<h2>Complete your payment</h2>
+                    <p>Go to Mpesa and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['mpesa'] ?? '' }}.</p>
+                    <p>Go to Airtell and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['airtel'] ?? '' }}.</p>
+                    <p>Go to Equitel and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['equitel'] ?? '' }}.</p>
+
+					<button wire:click="searchPayment()" class="btn btn-sm btn-outline-danger py-0">Check Payment Status</button>
+				</div>
+			</div>
+		</div>
+		@endif
 		
+		@if($successContainer)
 		<div class="container pb-60">
 			<div class="row">
 				<div class="col-md-12 text-center">
 					<h2>Thank you for your order</h2>
                     <p>A confirmation email was sent.</p>
-                    <a href="/shop" class="btn btn-submit btn-submitx">Continue Shopping</a>
 				</div>
 			</div>
 		</div>
+		@endif
 
 	</main>
 	
