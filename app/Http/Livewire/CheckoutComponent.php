@@ -233,9 +233,11 @@ class CheckoutComponent extends Component
                 );
 
         $datastring =  $fields['live'].$fields['oid'].$fields['inv'].$fields['ttl'].$fields['tel'].$fields['eml'].$fields['vid'].$fields['curr'].$fields['p1'].$fields['p2'].$fields['cbk'].$fields['cst'].$fields['crl'];
-        $hashkey ="demoCHANGED";
+        $hashkey = env('IPAY_VENDOR_KEY', 'demoCHANGED');
 
         $generated_hash = hash_hmac('sha1',$datastring , $hashkey);
+
+        //dd($this->formHash);
                 
         $this->formHash = $generated_hash;
         $this->showForm = true;

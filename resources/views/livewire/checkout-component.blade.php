@@ -199,7 +199,7 @@
 					<input name="ttl" type="hidden" value="{{ $formArray['ttl'] }}">
 					<input name="tel" type="hidden" value="{{ $formArray['tel'] }}">
 					<input name="eml" type="hidden" value="{{ $formArray['eml'] }}">
-					<input name="vid" type="hidden" value="demo">
+					<input name="vid" type="hidden" value="{{ env('IPAY_VENDOR_ID', 'demo') }}">
 					<input name="curr" type="hidden" value="KES">
 					<input name="p1" type="hidden" value="paymentforgoods">
 					<input name="p2" type="hidden" value="{{ $formArray['p2'] }}">

@@ -12,7 +12,7 @@ class PaymentService implements PaymentContract
     public function initiatePayment($data)
     {
         //check hash
-        $key = "demoCHANGED";//use "demoCHANGED" for testing where vid is set to "demo"
+        $key = env('IPAY_VENDOR_KEY', 'demoCHANGED');//use "demoCHANGED" for testing where vid is set to "demo"
 
         $live = 0;//live or not
         $oid = $data->ordernumber;//order id
@@ -24,7 +24,7 @@ class PaymentService implements PaymentContract
         $curr = 'KES';//currency
         $p1 = 'Order for Buying Goods';//
         $cst = 0;//customer email notification
-        $cbk = "https://webhook.site/0554b74f-ce38-4c87-90ae-0f252faf7063";//callback URL
+        $cbk = route('thankyou');//callback URL
 
         $datastring = $live.$oid.$inv.$amount.$tel.$eml.$vid.$curr.$p1.$cst.$cbk;
         /*********************************************************************************************************/
@@ -94,14 +94,14 @@ class PaymentService implements PaymentContract
 
         //dd('payment_created');
 
-        $key = 'demoCHANGED';
-        $datastring = $data->data->sid.'demo';
+        $key = env('IPAY_VENDOR_KEY', 'demoCHANGED');
+        $datastring = $data->data->sid.env('IPAY_VENDOR_ID', 'demo');
         $generated_hash = hash_hmac('sha256',$datastring , $key);
 
         $curlData = [
             'hash' => $generated_hash,
             'sid' => $data->data->sid,
-            'vid' => 'demo',
+            'vid' => env('IPAY_VENDOR_ID', 'demo'),
         ];
 
         $ch = curl_init();
@@ -141,7 +141,7 @@ class PaymentService implements PaymentContract
     {
         //dd($data->oid);
         $vid = env('IPAY_VENDOR_ID', 'demo');
-        $key = 'demoCHANGED';
+        $key = env('IPAY_VENDOR_KEY', 'demoCHANGED');
         $datastring = $data->oid.$vid;
         $generated_hash = hash_hmac('sha256',$datastring , $key);
 
