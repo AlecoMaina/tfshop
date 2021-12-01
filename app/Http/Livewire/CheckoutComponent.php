@@ -12,6 +12,7 @@ use Livewire\Component;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Crypt;
+use SmoDav\iPay\Cashier;
 
 class CheckoutComponent extends Component
 {
@@ -56,6 +57,7 @@ class CheckoutComponent extends Component
     public $submitFormButton = true;
     public $formArray = array();
     public $orderId;
+    public $iframe;
 
 
     public function updated($fields)
@@ -99,6 +101,19 @@ class CheckoutComponent extends Component
                 ]);
             }   
     }
+
+    // public function mount()
+    // {
+    //     $dataPoints = array(
+    //         array('id' => 21, 'name' => 'Anthony', 'status' => 'added'),
+    //         array('id' => 52, 'name' => 'Paul', 'status' => 'added'),
+    //         array('id' => 45, 'name' => 'Alex', 'status' => '')
+    //     );
+
+    //     array_push($dataPoints, ["id" => '' ,"name" => '', 'status' => '' ]); 
+
+    //         dd($dataPoints);
+    // }
     
     public function placeOrder()
     {
@@ -197,12 +212,14 @@ class CheckoutComponent extends Component
 
           if($paymentStatus){
 
-            //dd($paymentStatus->data->payment_channels[1]->paybill);
-            $paybillArray = array(
-                'mpesa' => $paymentStatus->data->payment_channels[0]->paybill,
-                'airtel' => $paymentStatus->data->payment_channels[1]->paybill,
-                'equitel' => $paymentStatus->data->payment_channels[2]->paybill,
-            );
+              $paybillArray = array(
+                  'mpesa' => $paymentStatus['mpesa']->paybill,
+                  'airtel' => $paymentStatus['airtel']->paybill,
+                  'equitel' => $paymentStatus['equitel']->paybill,
+                  'text' => $paymentStatus['text']
+                );
+                
+            //dd($paybillArray);
 
             $this->paybill = $paybillArray;
             $this->totalAmount = $order->total;
@@ -215,36 +232,64 @@ class CheckoutComponent extends Component
          else if($this->paymentmode == 'card')
         {
             //enables the second form to submit to ipay for redirection and verify
+            //add paymentchannels to the order
+            // $cashier = new Cashier();
 
-        $fields = array(
-                "live"=> "0",
-                "oid"=> $order->ordernumber,
-                "inv"=> $order->invoicenumber,
-                "ttl"=> $order->total,
-                "tel"=> $order->mobile,
-                "eml"=> $order->user->email,
-                "vid"=> env('IPAY_VENDOR_ID', 'demo'),
-                "curr"=> "KES",
-                "p1"=> "paymentforgoods",
-                "p2"=>  $order->id,
-                "cbk"=> route('thankyou'),
-                "cst"=> "1",
-                "crl"=> "0",
-                );
+            // $transactChannels = [
+            //     Cashier::CHANNEL_MPESA,
+            //     Cashier::CHANNEL_AIRTEL,
+            // ];
 
-        $datastring =  $fields['live'].$fields['oid'].$fields['inv'].$fields['ttl'].$fields['tel'].$fields['eml'].$fields['vid'].$fields['curr'].$fields['p1'].$fields['p2'].$fields['cbk'].$fields['cst'].$fields['crl'];
-        $hashkey = env('IPAY_VENDOR_KEY', 'demoCHANGED');
+            // //id tfpharmacy  key *87sUmknfj5seWCy@b$vAVyK2MNQ3%#S
 
-        $generated_hash = hash_hmac('sha1',$datastring , $hashkey);
+            // $response = $cashier
+            // ->usingChannels($transactChannels)
+            // ->usingVendorId(env('IPAY_VENDOR_ID', 'demo'), env('IPAY_VENDOR_KEY', 'demoCHANGED'))
+            // ->withCallback(route('thankyou'))
+            // ->withCustomer('0722000000', 'demo@example.com', false)
+            // ->transact(10, 'your order id', 'your order secret');
 
-        //dd($this->formHash);
-                
-        $this->formHash = $generated_hash;
-        $this->showForm = true;
-        $this->submitFormButton = false;
-        $this->formArray = $fields;
+            // //dd();
+            // $this->iframe = $response;
 
-        //dd($this->formArray);
+            $fields = array(
+                    "live"=> env('IPAY_LIVE', '0'),
+                    "oid"=> $order->ordernumber,
+                    "inv"=> $order->invoicenumber,
+                    "ttl"=> $order->total,
+                    "tel"=> $order->mobile,
+                    "eml"=> $order->user->email,
+                    "vid"=> env('IPAY_VENDOR_ID', 'demo'),
+                    "curr"=> "KES",
+                    "p1"=> "paymentforgoods",
+                    "p2"=>  $order->id,
+                    "p3"=> "",
+                    "p4"=>  "",
+                    "cbk"=> route('thankyou'),
+                    "cst"=> "1",
+                    "crl"=> "0",
+                    "mpesa" => env('IPAY_MPESA', 0),
+                    "airtel" => env('IPAY_AIRTEL', 0),
+                    "equity" => env('IPAY_EQUITY', 0),
+                    "debitcard"=> env('IPAY_DEBIT', 0),
+                    "creditcard"=> env('IPAY_CREDIT', 0),
+                    );
+
+            $datastring =  $fields['live'].$fields['oid'].$fields['inv'].$fields['ttl'].$fields['tel'].$fields['eml'].$fields['vid'].$fields['curr'].$fields['p1'].$fields['p2'].$fields['p3'].$fields['p4'].$fields['cbk'].$fields['cst'].$fields['crl'];
+            $hashkey = env('IPAY_VENDOR_KEY', 'demoCHANGED');
+
+            $generated_hash = hash_hmac('sha1',$datastring , $hashkey);
+
+            $this->formHash = $generated_hash;
+            $this->showForm = true;
+            $this->submitFormButton = false;
+            $this->formArray = $fields;
+
+            //dd($this->formHash, $generated_hash);
+
+            //dd($fields);
+
+            //dd($this->formArray);
         }
               
     }

@@ -19,6 +19,15 @@
 		@endif
 
 		@if($paymentContainer)
+
+		<div class="container_fluid text-center">
+			<div class="alert alert-success" role="alert">
+				@if($decryptedPaybill['text'] != 'NO STK')
+					{{ $decryptedPaybill['text'] ?? '' }}
+				@endif
+			</div>
+		</div>
+
 		<div class="container pb-60">
 			<div class="row">
 				<div class="col-md-12 text-center">
@@ -26,6 +35,8 @@
                     <p>Go to Mpesa and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['mpesa'] ?? '' }}.</p>
                     <p>Go to Airtell and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['airtel'] ?? '' }}.</p>
                     <p>Go to Equitel and pay ksh{{ $decryptedAmount ?? '' }} to paybill {{ $decryptedPaybill['equitel'] ?? '' }}.</p>
+
+					<!-- alert to also notify the user that also apayment request has been sent to the number -->
 
 					<button wire:click="searchPayment()" class="btn btn-sm btn-outline-danger py-0">Check Payment Status</button>
 				</div>

@@ -32,9 +32,9 @@ class ThankyouComponent extends Component
 
             if($updateOrder){
                 //dd($request->all());
+                $this->restCart();
                 $this->successContainer = true;
                 $this->paymentContainer = false;
-                $this->restCart();
             }
         } else {
             //decrypt the order id

@@ -20,6 +20,8 @@
 					<li class="item-link"><span>checkout</span></li>
 				</ul>
 			</div>
+
+			@if(!$iframe)
 			<div class=" main-content-area">
 				<form wire:submit.prevent="placeOrder">
 				<div class="row">
@@ -193,7 +195,7 @@
 
 			@if($showForm)
 				<form action="https://payments.ipayafrica.com/v3/ke" method="post">
-					<input name="live" type="hidden" value="0">
+					<input name="live" type="hidden" value="{{ env('IPAY_LIVE', '0') }}">
 					<input name="oid" type="hidden" value="{{ $formArray['oid'] }}">
 					<input name="inv" type="hidden" value="{{ $formArray['inv'] }}">
 					<input name="ttl" type="hidden" value="{{ $formArray['ttl'] }}">
@@ -203,9 +205,18 @@
 					<input name="curr" type="hidden" value="KES">
 					<input name="p1" type="hidden" value="paymentforgoods">
 					<input name="p2" type="hidden" value="{{ $formArray['p2'] }}">
+					<input name="p3" type="hidden" value="">
+					<input name="p4" type="hidden" value="">
 					<input name="cbk" type="hidden" value="{{ $formArray['cbk'] }}">
 					<input name="cst" type="hidden" value="1">
 					<input name="crl" type="hidden" value="0">
+
+					<input name="mpesa" type="hidden" value="env('IPAY_MPESA', 0)">
+					<input name="airtel" type="hidden" value="env('IPAY_AIRTEL', 0)">
+					<input name="equity" type="hidden" value="env('IPAY_EQUITY', 0)">
+					<input name="creditcard" type="hidden" value="env('IPAY_CREDIT', 0)">
+					<input name="debitcard" type="hidden" value="env('IPAY_DEBIT', 0)">
+
 					<input name="hsh" type="hidden" value="{{ $formHash }}">
 					<input value="Complete Payment" type="submit" class="btn btn-success btn-medium">
 				</form>
@@ -214,7 +225,13 @@
 			@endif
 
 			</div><!--end main content area-->
+
+
+			@else
+				{!! $iframe !!}
+			@endif
 		</div><!--end container-->
+
 
 	</main>
 	<!--main area-->
